@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block titulo %} Categorias {% endblock %}
+
+{% block contenido %}
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+  
+      <a class="navbar-brand" href="{% url 'pagina_principal' id_usuario=usuario.id_usuario %}">Lista de Libros</a>
+  
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
+        aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+  
+      <div class="collapse navbar-collapse" id="navbarText">
+  
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page"
+              href="{% url 'categoria' id_usuario=usuario.id_usuario %}">Categorias</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'editorial' id_usuario=usuario.id_usuario %}">Editoriales</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Gestion de Inventario</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Boleta</a>
+          </li>
+        </ul>
+  
+        <span class="navbar-text">
+          Usuario: #A000{{ usuario.id_usuario }} &nbsp; <a href="{% url 'logout' %}" class="btn btn-danger">Cerrar
+            sesión</a>
+        </span>
+  
+      </div>
+  
+    </div>
+  </nav>
+
+<div class="container">
+    <h1>Categorías</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#agregarModal">Agregar Categoría</button>
+
+    <table class="table mt-3">
+        <thead>
+            <tr>
+                <th>ID Categoría</th>
+                <th>Nombre</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for categoria in categorias %}
+            <tr>
+                <td>{{ categoria.id_categoria }}</td>
+                <td>{{ categoria.nombre }}</td>
+                <td>
+                    <button class="btn btn-info" data-bs-toggle="modal"
+                        data-bs-target="#editarModal{{ categoria.id_categoria }}">Editar</button>
+
+                    <div class="modal fade" id="editarModal{{ categoria.id_categoria }}" tabindex="-1"
+                        aria-labelledby="editarModalLabel{{ categoria.id_categoria }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="editarModalLabel{{ categoria.id_categoria }}">Editar
+                                        Categoría</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form
+                                        action="{% url 'actualizar_categoria' id_usuario=usuario.id_usuario id_categoria=categoria.id_categoria %}"
+                                        method="POST">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="nombre" class="form-label">Nombre</label>
+                                            <input type="text" class="form-control" id="nombre" name="nombre"
+                                                value="{{ categoria.nombre }}" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-danger" data-bs-toggle="modal"
+                        data-bs-target="#eliminarModal{{ categoria.id_categoria }}">Eliminar</button>
+
+                    <div class="modal fade" id="eliminarModal{{ categoria.id_categoria }}" tabindex="-1"
+                        aria-labelledby="eliminarModalLabel{{ categoria.id_categoria }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="eliminarModalLabel{{ categoria.id_categoria }}">
+                                        Confirmar eliminación</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>¿Estás seguro de que deseas eliminar la categoría "{{ categoria.nombre }}"?</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <form
+                                        action="{% url 'eliminar_categoria' id_usuario=usuario.id_usuario id_categoria=categoria.id_categoria %}"
+                                        method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                                    </form>
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Cancelar</button>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="agregarModal" tabindex="-1" aria-labelledby="agregarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="agregarModalLabel">Agregar Categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{% url 'crear_categoria' id_usuario=usuario.id_usuario %}" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

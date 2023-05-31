@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block titulo %} Pagina Principal {% endblock %}
+
+{% block contenido %}
+
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container-fluid">
+
+    <a class="navbar-brand" href="{% url 'pagina_principal' id_usuario=usuario.id_usuario %}">Lista de Libros</a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
+      aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarText">
+
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page"
+            href="{% url 'categoria' id_usuario=usuario.id_usuario %}">Categorias</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'editorial' id_usuario=usuario.id_usuario %}">Editoriales</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Gestion de Inventario</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Boleta</a>
+        </li>
+      </ul>
+
+      <span class="navbar-text">
+        Usuario: #A000{{ usuario.id_usuario }} &nbsp; <a href="{% url 'logout' %}" class="btn btn-danger">Cerrar
+          sesión</a>
+      </span>
+
+    </div>
+
+  </div>
+</nav>
+
+
+{% endblock %}

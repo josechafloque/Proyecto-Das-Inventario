@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block titulo %} Inicio {% endblock %}
+
+{% block contenido %}
+    
+<div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
+    <div class="card" style="width: 18rem;">
+        <div class="card-body">
+            <h1>Bienvenido al sistema</h1>
+            <h2>Software de control de inventarios y venta de libros</h2>
+
+            <form action="{% url 'login' %}">
+                <button type="submit" class="btn btn-warning" formnovalidate>Iniciar Sesion</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
