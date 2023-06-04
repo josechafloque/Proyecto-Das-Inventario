@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block titulo %} Categorias {% endblock %}
+
+{% block contenido %}
+
+<div class="container">
+    <h1 class="mt-4">Administrar Autores</h1>
+  
+    <!-- Botón para agregar un nuevo autor -->
+    <button type="button" class="btn btn-primary mt-4" data-bs-toggle="modal" data-bs-target="#crearAutorModal">Agregar Autor</button>
+
+    <!-- Botón para regresar a gestión de inventario -->
+    <a href="{% url 'gestion_inventario' id_usuario=id_usuario %}" class="btn btn-secondary mt-4">Regresar a Gestión de Inventario</a>
+  
+    <table class="table mt-4">
+      <thead>
+        <tr>
+          <th>Id_Autor</th>
+          <th>Nombre</th>
+          <th>Año</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for resultado in resultados %}
+        <tr>
+          <td>{{ resultado.0 }}</td>  
+          <td>{{ resultado.4 }}</td>
+          <td>{{ resultado.5 }}</td>
+          <td>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editarAutorModal{{ resultado.0 }}">Editar</button>
+
+            <div class="modal fade" id="editarAutorModal{{ resultado.0 }}" tabindex="-1" aria-labelledby="editarAutorModalLabel{{ resultado.0 }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editarAutorModalLabel{{ resultado.0 }}">Editar Autor</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post" action="{% url 'editar_autor' id_usuario=id_usuario id_libro=id_libro id_autor=resultado.0 %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="nombre">Nombre:</label>
+                                    <input type="text" name="nombre" id="nombre" class="form-control" value="{{ resultado.4 }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="anyo">Año:</label>
+                                    <input type="number" name="anyo" id="anyo" class="form-control" value="{{ resultado.5 }}">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#eliminarAutorModal{{ resultado.0 }}">Eliminar</button>
+
+            <div class="modal fade" id="eliminarAutorModal{{ resultado.0 }}" tabindex="-1" aria-labelledby="eliminarAutorModalLabel{{ resultado.0 }}" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="eliminarAutorModalLabel{{ resultado.0 }}">Eliminar Autor</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <p>¿Estás seguro de que deseas eliminar al autor {{ resultado.4 }}?</p>
+                    </div>
+                    <div class="modal-footer">
+                      <form method="post" action="{% url 'eliminar_autor' id_usuario=id_usuario id_libro=id_libro id_autor=resultado.0 %}">
+                        {% csrf_token %}
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+<!-- Modal para crear autor -->
+<div class="modal fade" id="crearAutorModal" tabindex="-1" aria-labelledby="crearAutorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="crearAutorModalLabel">Agregar Autor</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form method="post" action="{% url 'crear_autor' id_usuario=id_usuario id_libro=id_libro %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="nombre">Nombre:</label>
+              <input type="text" name="nombre" id="nombre" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label for="anyo">Año:</label>
+              <input type="number" name="anyo" id="anyo" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+{% endblock %}

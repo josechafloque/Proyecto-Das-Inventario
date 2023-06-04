@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block titulo %} Editoriales {% endblock %}
+
+{% block contenido %}
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="mb-3">
+        {{ form.titulo.label_tag }}
+        {{ form.titulo }}
+    </div>
+    <div class="mb-3">
+        {{ form.stock.label_tag }}
+        {{ form.stock }}
+    </div>
+    <div class="mb-3">
+        {{ form.imagen.label_tag }}
+        {{ form.imagen }}
+        {% if form.imagen.value %}
+        <img src="{{ form.imagen.value.url }}" alt="Vista previa de la imagen" width="200">
+        {% endif %}
+    </div>
+    <div class="mb-3">
+        {{ form.precio.label_tag }}
+        {{ form.precio }}
+    </div>
+    <div class="mb-3">
+        {{ form.id_categoria.label_tag }}
+        {{ form.id_categoria }}
+    </div>
+    <div class="mb-3">
+        {{ form.id_editorial.label_tag }}
+        {{ form.id_editorial }}
+    </div>
+
+    <button type="submit" class="btn btn-primary mb-3">Guardar</button>
+
+    <!-- Botón para ir a CRUD de autores -->
+    <a href="{% url 'crud_autores' id_usuario=id_usuario id_libro=form.instance.id_libro %}" class="btn btn-primary mb-3">Administrar Autores</a>
+
+    <!-- Botón para regresar a gestión de inventario -->
+    <a href="{% url 'gestion_inventario' id_usuario=id_usuario %}" class="btn btn-secondary mb-3">Regresar a Gestión de Inventario</a>
+    
+</form>
+
+
+{% endblock %}

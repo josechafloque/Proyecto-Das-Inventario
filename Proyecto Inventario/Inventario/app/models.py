@@ -73,6 +73,7 @@ class Autor(models.Model):
 class LibroAutor(models.Model):
     id_libro = models.ForeignKey(Libro, on_delete=models.CASCADE)
     id_autor = models.ForeignKey(Autor, on_delete=models.CASCADE)
+    anyo = models.IntegerField()
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['id_libro', 'id_autor'], name='libro_autor_pk')

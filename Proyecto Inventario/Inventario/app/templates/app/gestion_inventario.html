@@ -43,5 +43,47 @@
   </div>
 </nav>
 
+<div class="container">
+  <h1 class="mt-4">Gestión de Inventario</h1>
+
+  <a href="{% url 'crear_libro' id_usuario=usuario.id_usuario %}" class="btn btn-success mt-4">Crear Libro</a>
+
+  <table class="table mt-4">
+      <thead>
+          <tr>
+              <th>Id_Libro</th>
+              <th>Título</th>
+              <th>Imagen</th>
+              <th>Stock</th>
+              <th>Precio</th>
+              <th>Editorial</th>
+              <th>Categoría</th>
+              <th>Acciones</th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for libro in libros %}
+          <tr>
+              <td>{{ libro.id_libro }}</td>
+              <td>{{ libro.titulo }}</td>
+              <td><img src="{{ libro.imagen.url }}" width="70"></td>
+              <td>{{ libro.stock }}</td>
+              <td>{{ libro.precio }}</td>
+              <td>{{ libro.id_editorial.nombre }}</td>
+              <td>{{ libro.id_categoria.nombre }}</td>
+              <td>
+                  <a href="{% url 'editar_libro' id_usuario=usuario.id_usuario id_libro=libro.id_libro %}" class="btn btn-info">Editar</a>
+                  <form method="post" action="{% url 'eliminar_libro' id_usuario=usuario.id_usuario id_libro=libro.id_libro %}" style="display:inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger">Eliminar</button>
+                  </form>
+              </td>
+          </tr>
+          {% endfor %}
+      </tbody>
+  </table>
+</div>
+
+
 
 {% endblock %}
