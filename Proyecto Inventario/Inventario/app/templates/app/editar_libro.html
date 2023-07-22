@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block titulo %} Editoriales {% endblock %}
+{% block titulo %} Editar Libro {% endblock %}
 
 {% block contenido %}
 
@@ -39,8 +39,8 @@
     <!-- Botón para ir a CRUD de autores -->
     <a href="{% url 'crud_autores' id_usuario=id_usuario id_libro=form.instance.id_libro %}" class="btn btn-primary mb-3">Administrar Autores</a>
 
-    <!-- Botón para regresar a gestión de inventario -->
-    <a href="{% url 'gestion_inventario' id_usuario=id_usuario %}" class="btn btn-secondary mb-3">Regresar a Gestión de Inventario</a>
+    <!-- Botón para regresar a gestión del Catalogo -->
+    <a href="{% url 'gestion_catalogo' id_usuario=id_usuario %}" class="btn btn-secondary mb-3">Regresar a Gestión del Catalogo</a>
     
 </form>
 

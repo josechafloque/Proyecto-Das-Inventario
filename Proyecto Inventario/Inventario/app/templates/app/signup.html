@@ -1,14 +1,13 @@
 {% extends "base.html" %}
-
-{% block titulo %} Login {% endblock %}
-
+{% block titulo %} Registro {% endblock %}
 {% block contenido %}
-
-<div class="container d-flex align-items-center justify-content-center" style="height: 100vh;">
-    <div class="card" style="width: 18rem;">
-        <div class="container">
-            <h1 class="mt-5">Registrarse</h1>
-
+<div class="container d-flex align-items-center justify-content-center" style="height: 84vh;">
+    <div class="card" style="width: 20rem;">
+        <div class="container text-center">
+            <!-- Imagen centrada -->
+            <img src="https://img.freepik.com/vector-premium/icono-vector-libros-fondo-circulo-cuadrado_518965-305.jpg?w=1060" 
+                 alt="Imagen de inicio de sesión" class="img-fluid mb-3 mx-auto" style="max-width: 200px;">
+            <h1 class="mt-3">Registrarse</h1>
             <form id="registro-form" method="POST" action="{% url 'signup' %}" class="mt-3">
                 {% csrf_token %}
                 <div class="mb-3">
@@ -29,14 +28,16 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Registrar</button>
             </form>
-
             <form action="{% url 'login' %}">
                 <button type="submit" class="btn btn-secondary mt-3 mb-3" formnovalidate>Regresar a login</button>
             </form>
+            <a href="{% url 'inicio' %}" class="btn btn-danger mb-3">Regresar a Inicio</a>
         </div>
         <br>
     </div>
 </div>
-
-
 {% endblock %}
+
+
+
+

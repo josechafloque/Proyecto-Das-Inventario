@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block titulo %} Editar Usuario {% endblock %}
+
+{% block contenido %}
+
+<script>
+    // Función para ocultar el mensaje de forma automática después de 3 segundos
+    function hideMessage() {
+      var message = document.querySelector('.alert-dismissible');
+      if (message) {
+        setTimeout(function() {
+          message.style.display = 'none';
+        }, 3000); // 3000 milisegundos = 3 segundos
+      }
+    }
+    // Llamar a la función al cargar la página
+    window.onload = hideMessage;
+  </script>
+  
+  <!-- Mensajes de error y éxito -->
+  {% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-dismissible {% if message.tags %} {{ message.tags }} {% endif %} my-3">
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    {{ message }}
+  </div>
+  {% endfor %}
+  {% endif %}
+  
+  <div class="container d-flex align-items-center justify-content-center" style="height: 84vh;">
+    <div class="card" style="width: 20rem;">
+      <div class="container text-center">
+        <!-- Imagen centrada -->
+        <img src="https://img.freepik.com/vector-premium/icono-vector-libros-fondo-circulo-cuadrado_518965-305.jpg?w=1060" alt="Imagen de inicio de sesión" class="img-fluid mb-3 mx-auto" style="max-width: 200px;">
+  
+        <h1 class="mt-3">Editar Usuario</h1>
+  
+  
+        <form id="editar-usuario-form" method="POST" action="{% url 'editar_usuario' id_usuario=usuario.id_usuario %}" class="mt-3">
+          {% csrf_token %}
+          {{ editar_form.as_p }}
+          
+          <!-- Campo para ingresar la contraseña actual -->
+          <div class="mb-3">
+            <label for="contrasena_actual" class="form-label">Contraseña actual:</label>
+            <input type="password" id="contrasena_actual" name="contrasena_actual" class="form-control" required>
+          </div>
+  
+          <!-- Campos para ingresar nueva contraseña y confirmarla -->
+          <div class="mb-3">
+            <label for="nueva_contrasena" class="form-label">Nueva Contraseña:</label>
+            <input type="password" id="nueva_contrasena" name="nueva_contrasena" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label for="confirmar_nueva_contrasena" class="form-label">Confirmar Nueva Contraseña:</label>
+            <input type="password" id="confirmar_nueva_contrasena" name="confirmar_nueva_contrasena" class="form-control">
+          </div>
+  
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </form>
+  
+        <a href="{% url 'catalogo' id_usuario=usuario.id_usuario %}" class="btn btn-danger mb-3 mt-3">Regresar a Catalogo</a>
+  
+      </div>
+      <br>
+    </div>
+  </div>
+  
+  
+
+{% endblock %}

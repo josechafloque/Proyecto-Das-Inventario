@@ -26,7 +26,9 @@ class Categoria(models.Model):
 
 class Boleta(models.Model):
     id_boleta = models.AutoField(primary_key=True)
+    nombre_comprador = models.CharField(max_length=64)
     fecha = models.DateField()
+    monto_total = models.DecimalField(max_digits=12, decimal_places=2)
     id_usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE)
 
     class Meta:
@@ -42,7 +44,7 @@ class Editorial(models.Model):
 
 class Libro(models.Model):
     id_libro = models.AutoField(primary_key=True)
-    titulo = models.CharField(max_length=64)
+    titulo = models.CharField(max_length=1024)
     stock = models.IntegerField()
     imagen = models.ImageField(upload_to='imagenes/',verbose_name='Imagen',null=True)
     precio = models.DecimalField(max_digits=12, decimal_places=2)
@@ -94,3 +96,7 @@ class DetalleBoleta(models.Model):
     
     class Meta:
         db_table = "detalle_boleta"
+
+
+
+

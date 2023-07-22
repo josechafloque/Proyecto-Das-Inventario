@@ -7,7 +7,7 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
   
-      <a class="navbar-brand" href="{% url 'pagina_principal' id_usuario=usuario.id_usuario %}">Lista de Libros</a>
+      <a class="navbar-brand text-dark" href="{% url 'catalogo' id_usuario=usuario.id_usuario %}">CATALOGO</a>
   
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
         aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
@@ -17,25 +17,50 @@
       <div class="collapse navbar-collapse" id="navbarText">
   
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link active" aria-current="page"
-              href="{% url 'categoria' id_usuario=usuario.id_usuario %}">Categorias</a>
+  
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              GESTION DEL CATALOGO
+            </a>
+            <ul class="dropdown-menu">
+              <li class="nav-item">
+                <a class="dropdown-item text-dark" aria-current="page"
+                  href="{% url 'categoria' id_usuario=usuario.id_usuario %}">CATEGORIAS</a>
+              </li>
+              <li class="nav-item">
+                <a class="dropdown-item text-dark" href="{% url 'editorial' id_usuario=usuario.id_usuario %}">EDITORIALES</a>
+              </li>
+  
+              <li><hr class="dropdown-divider"></li>
+              <li class="nav-item">
+                <a class="dropdown-item text-dark" href="{% url 'gestion_catalogo' id_usuario=usuario.id_usuario %}">LIBROS</a>
+              </li>
+            </ul>
           </li>
+  
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'editorial' id_usuario=usuario.id_usuario %}">Editoriales</a>
+            <a class="nav-link text-dark" href="{% url 'estadisticas' id_usuario=usuario.id_usuario %}">ESTADISTICAS DE VENTAS</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'gestion_inventario' id_usuario=usuario.id_usuario %}">Gestion de Inventario</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">Boleta</a>
-          </li>
+  
         </ul>
   
-        <span class="navbar-text">
-          Usuario: #A000{{ usuario.id_usuario }} &nbsp; <a href="{% url 'logout' %}" class="btn btn-danger">Cerrar
-            sesión</a>
-        </span>
+        <div class="navbar-text">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none; color: black;">
+                Usuario: {{ usuario.nombre }}
+            </a>
+            <ul class="dropdown-menu">
+                <li class="nav-item">
+                    <a class="dropdown-item text-dark" aria-current="page" href="{% url 'editar_usuario' id_usuario=usuario.id_usuario %}">Editar Perfil</a>
+                </li>
+        
+                <li><hr class="dropdown-divider"></li>
+                <li class="nav-item">
+                    <a class="dropdown-item text-dark" href="{% url 'logout' %}">Cerrar Sesión</a>
+                </li>
+            </ul>
+          </li>
+        </div>
   
       </div>
   
@@ -126,6 +151,43 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Mostrar enlaces de paginación -->
+  <nav aria-label="Pagination">
+    <ul class="pagination justify-content-center">
+      {% if editoriales.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page=1" aria-label="Primera">
+          <span aria-hidden="true">&laquo;&laquo;</span>
+        </a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ editoriales.previous_page_number }}" aria-label="Anterior">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {% endif %}
+
+      {% for num in editoriales.paginator.page_range %}
+      <li class="page-item {% if editoriales.number == num %}active{% endif %}">
+        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+      </li>
+      {% endfor %}
+
+      {% if editoriales.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ editoriales.next_page_number }}" aria-label="Siguiente">
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ editoriales.paginator.num_pages }}" aria-label="Última">
+          <span aria-hidden="true">&raquo;&raquo;</span>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
 </div>
 
 <div class="modal fade" id="agregarModal" tabindex="-1" aria-labelledby="agregarModalLabel" aria-hidden="true">

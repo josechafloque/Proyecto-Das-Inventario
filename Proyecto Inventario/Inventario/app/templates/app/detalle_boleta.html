@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block titulo %} Detalle Boleta {% endblock %}
+
+{% block contenido %}
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container-fluid">
+
+    <a class="navbar-brand text-dark" href="{% url 'catalogo' id_usuario=usuario.id_usuario %}">CATALOGO</a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
+      aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarText">
+
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            GESTION DEL CATALOGO
+          </a>
+          <ul class="dropdown-menu">
+            <li class="nav-item">
+              <a class="dropdown-item text-dark" aria-current="page"
+                href="{% url 'categoria' id_usuario=usuario.id_usuario %}">CATEGORIAS</a>
+            </li>
+            <li class="nav-item">
+              <a class="dropdown-item text-dark" href="{% url 'editorial' id_usuario=usuario.id_usuario %}">EDITORIALES</a>
+            </li>
+
+            <li><hr class="dropdown-divider"></li>
+            <li class="nav-item">
+              <a class="dropdown-item text-dark" href="{% url 'gestion_catalogo' id_usuario=usuario.id_usuario %}">LIBROS</a>
+            </li>
+          </ul>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link text-dark" href="{% url 'estadisticas' id_usuario=usuario.id_usuario %}">ESTADISTICAS DE VENTAS</a>
+        </li>
+
+      </ul>
+
+      <div class="navbar-text">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none; color: black;">
+              Usuario: {{ usuario.nombre }}
+          </a>
+          <ul class="dropdown-menu">
+              <li class="nav-item">
+                  <a class="dropdown-item text-dark" aria-current="page" href="{% url 'editar_usuario' id_usuario=usuario.id_usuario %}">Editar Perfil</a>
+              </li>
+      
+              <li><hr class="dropdown-divider"></li>
+              <li class="nav-item">
+                  <a class="dropdown-item text-dark" href="{% url 'logout' %}">Cerrar Sesión</a>
+              </li>
+          </ul>
+        </li>
+      </div>
+
+    </div>
+
+  </div>
+</nav>
+<h1>Detalle de la Boleta</h1>
+
+<p>Boleta ID: {{ boleta.id_boleta }}</p>
+<p>Nombre del Comprador: {{ boleta.nombre_comprador }}</p>
+<p>Fecha: {{ boleta.fecha }}</p>
+<p>Monto Total: {{ boleta.monto_total }}</p>
+
+<hr>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>ID Libro</th>
+      <th>Título</th>
+      <th>Cantidad</th>
+      <th>Precio Unitario</th>
+      <th>Subtotal</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for detalle in detalles %}
+    <tr>
+      <td>{{ detalle.id_libro }}</td>
+      <td>{{ detalle.id_libro.titulo }}</td>
+      <td>{{ detalle.cantidad }}</td>
+      <td>{{ detalle.precio }}</td>
+      <td>{{ detalle.subtotal }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'boleta' id_usuario=boleta.id_usuario_id %}" class="btn btn-primary">Regresar a Boleta</a>
+
+{% endblock %}

@@ -1,36 +1,38 @@
 {% extends "base.html" %}
 
-{% block titulo %} Editoriales {% endblock %}
+{% block titulo %} Agregar Nuevo Libro {% endblock %}
 
 {% block contenido %}
+
+<h1>Agregar Libro</h1>
 
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="mb-3">
-        {{ form.titulo.label_tag }}
+        <label for="{{ form.titulo.id_for_label }}" class="form-label">{{ form.titulo.label }}</label>
         {{ form.titulo }}
     </div>
     <div class="mb-3">
-        {{ form.stock.label_tag }}
+        <label for="{{ form.stock.id_for_label }}" class="form-label">{{ form.stock.label }}</label>
         {{ form.stock }}
     </div>
     <div class="mb-3">
-        {{ form.imagen.label_tag }}
+        <label for="{{ form.imagen.id_for_label }}" class="form-label">{{ form.imagen.label }}</label>
         {{ form.imagen }}
         {% if form.imagen.value %}
         <img src="{{ form.imagen.value.url }}" alt="Vista previa de la imagen" width="200">
         {% endif %}
     </div>
     <div class="mb-3">
-        {{ form.precio.label_tag }}
+        <label for="{{ form.precio.id_for_label }}" class="form-label">{{ form.precio.label }}</label>
         {{ form.precio }}
     </div>
     <div class="mb-3">
-        {{ form.id_categoria.label_tag }}
+        <label for="{{ form.id_categoria.id_for_label }}" class="form-label">{{ form.id_categoria.label }}</label>
         {{ form.id_categoria }}
     </div>
     <div class="mb-3">
-        {{ form.id_editorial.label_tag }}
+        <label for="{{ form.id_editorial.id_for_label }}" class="form-label">{{ form.id_editorial.label }}</label>
         {{ form.id_editorial }}
     </div>
 
@@ -42,9 +44,7 @@
     {% endif %}
 
     <!-- Botón para regresar a gestión de inventario -->
-    <a href="{% url 'gestion_inventario' id_usuario=id_usuario %}" class="btn btn-secondary mb-3">Regresar a Gestión de Inventario</a>
-    
+    <a href="{% url 'gestion_catalogo' id_usuario=id_usuario %}" class="btn btn-secondary mb-3">Regresar a Gestión del Catalogo</a>
 </form>
-
 
 {% endblock %}

@@ -1,11 +1,24 @@
+from datetime import date
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
+from django.db.models import Sum, Count
 from django.db import connection
-from .forms import AutorForm, LibroForm, AutorFormSet
-from django import forms
-from django.db.models import Count
-from .models import Usuario, LibroAutor, Categoria, Libro, Autor, Editorial
+from django.contrib import messages
+from django.template.loader import get_template
+from .forms import LibroForm
+from .models import Usuario, Categoria, Libro, Autor, Editorial, Boleta,DetalleBoleta
+from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
+from .forms import BoletaForm
+from django.http import JsonResponse
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter, landscape
+from io import BytesIO
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .forms import EditarUsuarioForm, CambiarContrasenaForm
+from django.db.models import F
 
 # Create your views here.
 
@@ -23,7 +36,7 @@ def login_view(request):
             if usuario.contrasena == contrasena:
                 # Autenticación exitosa, iniciar sesión
                 login(request, usuario)
-                return redirect('pagina_principal', id_usuario=usuario.id_usuario)  # Redirecciona a la página de inicio con el id_usuario
+                return redirect('catalogo', id_usuario=usuario.id_usuario)  # Redirecciona a la página de inicio con el id_usuario
             else:
                 error = 'Credenciales inválidas'
                 return render(request, 'app/login.html', {'error': error})
@@ -53,13 +66,166 @@ def logout_view(request):
     return render(request, 'app/inicio.html')
 
 
-def pagina_principal(request, id_usuario):
+def editar_usuario(request, id_usuario):
     usuario = Usuario.objects.get(id_usuario=id_usuario)
-    return render(request, 'app/pagina_principal.html', {'usuario': usuario})
+
+    if request.method == 'POST':
+        editar_form = EditarUsuarioForm(request.POST, instance=usuario)
+
+        # Obtener los valores de las contraseñas desde el POST
+        contrasena_actual = request.POST.get('contrasena_actual', '')
+        nueva_contrasena = request.POST.get('nueva_contrasena', '')
+        confirmar_nueva_contrasena = request.POST.get('confirmar_nueva_contrasena', '')
+
+        # Verificar que la contraseña actual sea correcta
+        if contrasena_actual != usuario.contrasena:
+            messages.error(request, 'La contraseña actual es incorrecta.')
+        else:
+            # Contraseña actual correcta, proceder con la edición del usuario
+            if editar_form.is_valid():
+                editar_form.save()
+
+                # Verificar si se ingresó una nueva contraseña y si coincide con la confirmación
+                if nueva_contrasena and nueva_contrasena == confirmar_nueva_contrasena:
+                    usuario.contrasena = nueva_contrasena
+                    usuario.save()
+
+                    messages.success(request, 'Usuario actualizado exitosamente.')
+                else:
+                    messages.error(request, 'Las contraseñas nuevas no coinciden.')
+            else:
+                messages.error(request, 'Error en los datos ingresados.')
+
+    else:
+        editar_form = EditarUsuarioForm(instance=usuario)
+
+    cambiar_contrasena_form = CambiarContrasenaForm()
+
+    return render(request, 'app/editar_usuario.html', {'usuario': usuario, 'editar_form': editar_form, 'cambiar_contrasena_form': cambiar_contrasena_form})
+
+
+
+def catalogo(request, id_usuario):
+    usuario = Usuario.objects.get(id_usuario=id_usuario)
+    editoriales = Editorial.objects.filter(id_usuario_id=id_usuario)
+    categorias = Categoria.objects.filter(id_usuario_id=id_usuario)
+    filtro_categoria = request.GET.get('categoria')
+    filtro_editorial = request.GET.get('editorial')
+    filtro_titulo = request.GET.get('titulo')
+    filtro_autor = request.GET.get('autor')  # Nuevo filtro por autor
+
+    libros = Libro.objects.filter(id_usuario_id=id_usuario)
+
+    if filtro_categoria:
+        libros = libros.filter(id_categoria_id=filtro_categoria)
+
+    if filtro_editorial:
+        libros = libros.filter(id_editorial_id=filtro_editorial)
+
+    if filtro_titulo:
+        libros = libros.filter(titulo__icontains=filtro_titulo)
+
+    if filtro_autor:  # Aplicar el filtro por autor si se ingresó uno
+        libros = libros.filter(libroautor__id_autor__nombre__icontains=filtro_autor)
+
+    libros_autores = []
+    for libro in libros:
+        autores_libro = libro.libroautor_set.values_list('id_autor__nombre', flat=True)
+        libro_dict = {
+            'id_libro': libro.id_libro,
+            'titulo': libro.titulo,
+            'imagen': libro.imagen,
+            'precio': libro.precio,
+            'stock': libro.stock,
+            'autores': list(autores_libro),
+            'agregado_a_boleta': False
+        }
+        libros_autores.append(libro_dict)
+
+    # Implementación de paginación
+    libros_por_pagina = 4
+
+    paginator = Paginator(libros_autores, libros_por_pagina)
+    page = request.GET.get('page')
+
+    try:
+        libros_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        # Si el parámetro page no es un entero, mostrar la primera página
+        libros_paginados = paginator.page(1)
+    except EmptyPage:
+        # Si la página está fuera de rango, mostrar la última página
+        libros_paginados = paginator.page(paginator.num_pages)
+
+    if request.method == 'POST':
+        libros_seleccionados = request.POST.getlist('libros_seleccionados')
+        cantidades = request.POST.getlist('cantidad')
+
+        if len(libros_seleccionados) != len(cantidades):
+            messages.error(request, 'La cantidad de libros seleccionados no coincide con la cantidad ingresada.')
+        else:
+            # Crear una lista de libros seleccionados con sus cantidades
+            libros_para_boleta = []
+            total_monto = 0
+            for libro_id, cantidad in zip(libros_seleccionados, cantidades):
+                libro = Libro.objects.get(id_libro=libro_id)
+                subtotal = libro.precio * int(cantidad)
+                total_monto += subtotal
+                libro_para_boleta = {
+                    'id_libro': libro.id_libro,
+                    'titulo': libro.titulo,
+                    'cantidad': int(cantidad),
+                    'precio': libro.precio,
+                    'subtotal': subtotal
+                }
+                libros_para_boleta.append(libro_para_boleta)
+
+            # Crear una boleta sin registrar en la base de datos
+            nueva_boleta = Boleta.objects.create(
+                nombre_comprador="agregar nombre",
+                fecha=date.today(),
+                monto_total=total_monto,
+                id_usuario_id=id_usuario
+            )
+
+            # Registrar los detalles de la boleta en la base de datos
+            for detalle in libros_para_boleta:
+                DetalleBoleta.objects.create(
+                    cantidad=detalle['cantidad'],
+                    precio=detalle['precio'],
+                    id_boleta=nueva_boleta,
+                    id_libro_id=detalle['id_libro']
+                )
+
+            contexto = {
+                'libros_autores': libros_autores,
+                'usuario': usuario,
+                'categorias': categorias,
+                'editoriales': editoriales,
+                'filtro_categoria': filtro_categoria,
+                'filtro_editorial': filtro_editorial,
+                'filtro_titulo': filtro_titulo,
+                'filtro_autor': filtro_autor,
+                'nueva_boleta': nueva_boleta  # Pasar la boleta creada sin registrar al contexto
+            }
+            return render(request, 'app/boleta.html', contexto)
+
+    contexto = {
+        'libros_paginados': libros_paginados,  # Lista de libros paginados
+        'usuario': usuario,
+        'categorias': categorias,
+        'editoriales': editoriales,
+        'filtro_categoria': filtro_categoria,
+        'filtro_editorial': filtro_editorial,
+        'filtro_titulo': filtro_titulo,
+        'filtro_autor': filtro_autor  # Agregamos el filtro por autor al contexto
+    }
+    return render(request, 'app/catalogo.html', contexto)
+
 
 # Categorias
 
-def categoria(request, id_usuario):
+def lista_categoria(request, id_usuario):
     # Obtener el usuario
     usuario = Usuario.objects.get(id_usuario=id_usuario)
 
@@ -71,7 +237,22 @@ def categoria(request, id_usuario):
     # Crear una lista de diccionarios con los resultados de la consulta
     categorias_list = [{'id_categoria': categoria[0], 'nombre': categoria[1]} for categoria in categorias]
 
-    return render(request, 'app/categoria.html', {'usuario': usuario, 'categorias': categorias_list})
+    # Definir la cantidad de categorías por página
+    categorias_por_pagina = 5
+
+    paginator = Paginator(categorias_list, categorias_por_pagina)
+    page = request.GET.get('page')
+
+    try:
+        categorias_paginadas = paginator.page(page)
+    except PageNotAnInteger:
+        # Si el parámetro page no es un entero, mostrar la primera página
+        categorias_paginadas = paginator.page(1)
+    except EmptyPage:
+        # Si la página está fuera de rango, mostrar la última página
+        categorias_paginadas = paginator.page(paginator.num_pages)
+
+    return render(request, 'app/categoria.html', {'usuario': usuario, 'categorias': categorias_paginadas})
 
 def crear_categoria(request, id_usuario):
     if request.method == 'POST':
@@ -118,11 +299,11 @@ def eliminar_categoria(request, id_usuario, id_categoria):
 
 #Editoriales
 
-def Editorial(request, id_usuario):
+def Lista_Editorial(request, id_usuario):
     # Obtener el usuario
     usuario = Usuario.objects.get(id_usuario=id_usuario)
 
-    # Obtener todas las categorías del usuario utilizando una consulta SQL nativa
+    # Obtener todas las editoriales del usuario utilizando una consulta SQL nativa
     with connection.cursor() as cursor:
         cursor.execute("SELECT id_editorial, nombre FROM editorial WHERE id_usuario_id = %s", [id_usuario])
         editoriales = cursor.fetchall()
@@ -130,7 +311,22 @@ def Editorial(request, id_usuario):
     # Crear una lista de diccionarios con los resultados de la consulta
     editoriales_list = [{'id_editorial': editorial[0], 'nombre': editorial[1]} for editorial in editoriales]
 
-    return render(request, 'app/editorial.html', {'usuario': usuario, 'editoriales': editoriales_list})
+    # Definir la cantidad de editoriales por página
+    editoriales_por_pagina = 5
+
+    paginator = Paginator(editoriales_list, editoriales_por_pagina)
+    page = request.GET.get('page')
+
+    try:
+        editoriales_paginadas = paginator.page(page)
+    except PageNotAnInteger:
+        # Si el parámetro page no es un entero, mostrar la primera página
+        editoriales_paginadas = paginator.page(1)
+    except EmptyPage:
+        # Si la página está fuera de rango, mostrar la última página
+        editoriales_paginadas = paginator.page(paginator.num_pages)
+
+    return render(request, 'app/editorial.html', {'usuario': usuario, 'editoriales': editoriales_paginadas})
 
 def crear_editorial(request, id_usuario):
     if request.method == 'POST':
@@ -177,10 +373,30 @@ def eliminar_editorial(request, id_usuario, id_editorial):
 
 # Gestion de inventario
 
-def gestion_inventario(request, id_usuario):
+def gestion_catalogo(request, id_usuario):
     usuario = Usuario.objects.get(id_usuario=id_usuario)
     libros = Libro.objects.filter(id_usuario=id_usuario).select_related('id_categoria', 'id_editorial')
-    return render(request, 'app/gestion_inventario.html', {'libros': libros, 'usuario': usuario})
+
+    # Definir la cantidad de libros por página
+    libros_por_pagina = 5
+
+    paginator = Paginator(libros, libros_por_pagina)
+    page = request.GET.get('page')
+
+    try:
+        libros_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        # Si el parámetro page no es un entero, mostrar la primera página
+        libros_paginados = paginator.page(1)
+    except EmptyPage:
+        # Si la página está fuera de rango, mostrar la última página
+        libros_paginados = paginator.page(paginator.num_pages)
+
+    contexto = {
+        'libros': libros_paginados,
+        'usuario': usuario
+    }
+    return render(request, 'app/gestion_catalogo.html', contexto)
 
 
 
@@ -214,7 +430,7 @@ def editar_libro(request,id_usuario,id_libro):
         form = LibroForm(request.POST, request.FILES, instance=libro)
         if form.is_valid():
             form.save()
-            return redirect('gestion_inventario', id_usuario=usuario.id_usuario)
+            return redirect('gestion_catalogo', id_usuario=usuario.id_usuario)
     else:
         form = LibroForm(instance=libro)
 
@@ -232,9 +448,9 @@ def eliminar_libro(request, id_usuario, id_libro):
                 autor.delete()
 
         libro.delete()
-        return redirect('gestion_inventario', id_usuario=id_usuario)
+        return redirect('gestion_catalogo', id_usuario=id_usuario)
 
-    return redirect('gestion_inventario', id_usuario=id_usuario)
+    return redirect('gestion_catalogo', id_usuario=id_usuario)
 
 
 # CRUD DE AUTORES
@@ -333,8 +549,122 @@ def eliminar_autor(request, id_usuario, id_libro, id_autor):
     
     return render(request, 'app/eliminar_autor_modal.html', contexto)
 
+# pip install django-plotly-dash
+
+def estadisticas(request, id_usuario):
+    usuario = Usuario.objects.get(id_usuario=id_usuario)
+    editoriales = Editorial.objects.filter(id_usuario_id=id_usuario)
+    categorias = Categoria.objects.filter(id_usuario_id=id_usuario)
+    filtro_categoria = request.GET.get('categoria')
+    filtro_editorial = request.GET.get('editorial')
+    filtro_titulo = request.GET.get('titulo')
+
+    libros = Libro.objects.filter(id_usuario_id=id_usuario, detalleboleta__isnull=False)
+
+    if filtro_categoria:
+        libros = libros.filter(id_categoria_id=filtro_categoria)
+
+    if filtro_editorial:
+        libros = libros.filter(id_editorial_id=filtro_editorial)
+
+    if filtro_titulo:
+        libros = libros.filter(titulo__icontains=filtro_titulo)
+
+    resultados = libros.values('id_libro', 'titulo', 'id_categoria__nombre', 'id_editorial__nombre').annotate(
+        total_cantidad=Sum('detalleboleta__cantidad'),
+        total_monto=Sum(F('detalleboleta__cantidad') * F('detalleboleta__precio'))
+    )
+
+    # Definir la cantidad de libros por página
+    libros_por_pagina = 5
+
+    paginator = Paginator(resultados, libros_por_pagina)
+    page = request.GET.get('page')
+
+    try:
+        libros_paginados = paginator.page(page)
+    except PageNotAnInteger:
+        # Si el parámetro page no es un entero, mostrar la primera página
+        libros_paginados = paginator.page(1)
+    except EmptyPage:
+        # Si la página está fuera de rango, mostrar la última página
+        libros_paginados = paginator.page(paginator.num_pages)
+
+    contexto = {
+        'usuario': usuario,
+        'libros': libros_paginados,
+        'categorias': categorias,
+        'editoriales': editoriales,
+        'filtro_categoria': filtro_categoria,
+        'filtro_editorial': filtro_editorial,
+        'filtro_titulo': filtro_titulo
+    }
+    return render(request, 'app/estadisticas.html', contexto)
 
 
+def boleta(request, id_usuario, id_boleta):
+    boleta = get_object_or_404(Boleta, id_boleta=id_boleta, id_usuario_id=id_usuario)
 
+    if request.method == 'POST':
+        nombre_comprador = request.POST.get('nombre_comprador')
+        boleta.nombre_comprador = nombre_comprador
+        boleta.save()
+        # Redireccionar a la página de boleta para mostrar los cambios
+        return redirect('boleta', id_usuario=id_usuario, id_boleta=id_boleta)
 
+    contexto = {
+        'boleta': boleta
+    }
+    return render(request, 'app/boleta.html', contexto)
 
+def generar_boleta(request, id_usuario, id_boleta):
+    boleta = get_object_or_404(Boleta, id_boleta=id_boleta, id_usuario_id=id_usuario)
+
+    # Creamos un objeto de tipo BytesIO para almacenar el PDF en memoria
+    buffer = BytesIO()
+
+    # Creamos un objeto de tipo canvas, que nos permitirá dibujar en el PDF
+    c = canvas.Canvas(buffer, pagesize=letter)
+
+    # Agregamos contenido al PDF
+    c.drawString(100, 750, f"Boleta Nº {boleta.id_boleta}")
+    c.drawString(100, 730, f"Fecha: {boleta.fecha.strftime('%d/%m/%Y')}")
+    c.drawString(100, 710, f"Nombre del Comprador: {boleta.nombre_comprador}")
+
+    # Posición inicial del contenido de la tabla
+    y = 650
+
+    # Dibujamos la tabla con los detalles de la boleta
+    c.drawString(100, y, "Título")
+    c.drawString(250, y, "Cantidad")
+    c.drawString(350, y, "Precio")
+    c.drawString(450, y, "Subtotal")
+
+    # Posición de la siguiente fila
+    y -= 20
+
+    for detalle in boleta.detalleboleta_set.all():
+        c.drawString(100, y, detalle.id_libro.titulo)
+        c.drawString(250, y, str(detalle.cantidad))
+        c.drawString(350, y, f"${detalle.precio}")
+        c.drawString(450, y, f"${detalle.cantidad * detalle.precio}")
+        y -= 20
+
+    # Agregamos el total de la boleta
+    c.drawString(350, y - 40, "Total:")
+    c.drawString(450, y - 40, f"${boleta.monto_total}")
+
+    # Guardamos el PDF
+    c.save()
+
+    # Obtenemos el contenido del buffer y establecemos las cabeceras del HTTP response
+    pdf = buffer.getvalue()
+    buffer.close()
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'filename=boleta_{boleta.id_boleta}.pdf'
+
+    # Escribimos el contenido del PDF en la respuesta
+    response.write(pdf)
+    return response
+
+# pip install reportlab

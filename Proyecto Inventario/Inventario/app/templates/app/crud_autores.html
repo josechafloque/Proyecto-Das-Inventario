@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block titulo %} Categorias {% endblock %}
+{% block titulo %} CRUD Autores {% endblock %}
 
 {% block contenido %}
 
@@ -11,7 +11,7 @@
     <button type="button" class="btn btn-primary mt-4" data-bs-toggle="modal" data-bs-target="#crearAutorModal">Agregar Autor</button>
 
     <!-- Botón para regresar a gestión de inventario -->
-    <a href="{% url 'gestion_inventario' id_usuario=id_usuario %}" class="btn btn-secondary mt-4">Regresar a Gestión de Inventario</a>
+    <a href="{% url 'gestion_catalogo' id_usuario=id_usuario %}" class="btn btn-secondary mt-4">Regresar a Gestión del Catalogo</a>
   
     <table class="table mt-4">
       <thead>

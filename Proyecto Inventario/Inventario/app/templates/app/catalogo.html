@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block titulo %} Catalogo de Libros {% endblock %}
+
+{% block contenido %}
+
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container-fluid">
+
+    <a class="navbar-brand text-dark" href="{% url 'catalogo' id_usuario=usuario.id_usuario %}">CATALOGO</a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
+      aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarText">
+
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            GESTION DEL CATALOGO
+          </a>
+          <ul class="dropdown-menu">
+            <li class="nav-item">
+              <a class="dropdown-item text-dark" aria-current="page"
+                href="{% url 'categoria' id_usuario=usuario.id_usuario %}">CATEGORIAS</a>
+            </li>
+            <li class="nav-item">
+              <a class="dropdown-item text-dark" href="{% url 'editorial' id_usuario=usuario.id_usuario %}">EDITORIALES</a>
+            </li>
+
+            <li><hr class="dropdown-divider"></li>
+            <li class="nav-item">
+              <a class="dropdown-item text-dark" href="{% url 'gestion_catalogo' id_usuario=usuario.id_usuario %}">LIBROS</a>
+            </li>
+          </ul>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link text-dark" href="{% url 'estadisticas' id_usuario=usuario.id_usuario %}">ESTADISTICAS DE VENTAS</a>
+        </li>
+
+      </ul>
+
+      <div class="navbar-text">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle text-dark" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none; color: black;">
+              Usuario: {{ usuario.nombre }}
+          </a>
+          <ul class="dropdown-menu">
+              <li class="nav-item">
+                  <a class="dropdown-item text-dark" aria-current="page" href="{% url 'editar_usuario' id_usuario=usuario.id_usuario %}">Editar Perfil</a>
+              </li>
+      
+              <li><hr class="dropdown-divider"></li>
+              <li class="nav-item">
+                  <a class="dropdown-item text-dark" href="{% url 'logout' %}">Cerrar Sesión</a>
+              </li>
+          </ul>
+        </li>
+      </div>
+
+    </div>
+
+  </div>
+</nav>
+
+
+<h1>Catalogo de Libros</h1>
+
+<form method="GET" action="{% url 'catalogo' usuario.id_usuario %}">
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label for="categoria" class="form-label">Filtrar por Categoría:</label>
+      <select class="form-select" name="categoria" id="categoria">
+        <option value="">Todas las categorías</option>
+        {% for categoria in categorias %}
+        <option value="{{ categoria.id_categoria }}" {% if categoria.id_categoria|stringformat:"s" == filtro_categoria %}selected{% endif %}>
+          {{ categoria.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label for="editorial" class="form-label">Filtrar por Editorial:</label>
+      <select class="form-select" name="editorial" id="editorial">
+        <option value="">Todas las editoriales</option>
+        {% for editorial in editoriales %}
+        <option value="{{ editorial.id_editorial }}" {% if editorial.id_editorial|stringformat:"s" == filtro_editorial %}selected{% endif %}>
+          {{ editorial.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label for="titulo" class="form-label">Buscar por Título:</label>
+      <div class="input-group">
+        <input type="text" class="form-control" name="titulo" id="titulo" value="{{ filtro_titulo|default:'' }}">
+        <button type="submit" class="btn btn-primary">Buscar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-4">
+      <label for="autor" class="form-label">Filtrar por Autor:</label>
+      <input type="text" class="form-control" name="autor" id="autor" value="{{ filtro_autor|default:'' }}">
+    </div>
+  </div>
+
+</form>
+
+<div><br></div>
+
+<form method="POST" action="{% url 'catalogo' id_usuario=usuario.id_usuario %}">
+  {% csrf_token %}
+  <div class="row row-cols-1 row-cols-md-4 g-5">
+    {% for libro in libros_paginados %}
+    <div class="col-md-3">
+      <div class="card h-100">
+        <img src="{{ libro.imagen.url }}" class="card-img-top" alt="{{ libro.titulo }}" style="max-height: 350px">
+        <div class="card-body">
+          <h5 class="card-title" style="font-size: 14px;">{{ libro.titulo }}</h5>
+          <p class="card-text" style="font-size: 12px;">Precio: S/.{{ libro.precio }}</p>
+          <p class="card-text" style="font-size: 12px;">Stock: {{ libro.stock }}</p>
+          <p class="card-text" style="font-size: 12px;">Autores: {% for autor in libro.autores %}<br>{{ autor }}{% endfor %}</p>
+        </div>
+        <div class="card-footer">
+          {% if libro.stock > 0 %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="libros_seleccionados" value="{{ libro.id_libro }}">
+            <label class="form-check-label" style="font-size: 12px;">Cantidad:</label>
+            <input type="number" name="cantidad" class="form-control" min="0" max="{{ libro.stock }}" value="0" style="font-size: 12px;">
+          </div>
+          {% else %}
+          <span class="text-danger" style="font-size: 12px;">Sin stock</span>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="libros_seleccionados" value="{{ libro.id_libro }}">
+            <label class="form-check-label" style="font-size: 12px;">Cantidad:</label>
+            <input type="number" name="cantidad" class="form-control" min="0" max="{{ libro.stock }}" value="0" style="font-size: 12px;">
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <br>
+
+  <button type="submit" class="btn btn-primary mb-2" style="font-size: 14px;">Agregar a la boleta</button>
+</form>
+
+<!-- Mostrar enlaces de paginación -->
+<nav aria-label="Pagination">
+  <ul class="pagination justify-content-center">
+    {% if libros_paginados.has_previous %}
+    <li class="page-item">
+      <a class="page-link" href="?page=1" aria-label="Primera">
+        <span aria-hidden="true">&laquo;&laquo;</span>
+      </a>
+    </li>
+    <li class="page-item">
+      <a class="page-link" href="?page={{ libros_paginados.previous_page_number }}" aria-label="Anterior">
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    </li>
+    {% endif %}
+
+    {% for num in libros_paginados.paginator.page_range %}
+    <li class="page-item {% if libros_paginados.number == num %}active{% endif %}">
+      <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+    </li>
+    {% endfor %}
+
+    {% if libros_paginados.has_next %}
+    <li class="page-item">
+      <a class="page-link" href="?page={{ libros_paginados.next_page_number }}" aria-label="Siguiente">
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    </li>
+    <li class="page-item">
+      <a class="page-link" href="?page={{ libros_paginados.paginator.num_pages }}" aria-label="Última">
+        <span aria-hidden="true">&raquo;&raquo;</span>
+      </a>
+    </li>
+    {% endif %}
+  </ul>
+</nav>
+
+
+<script>
+  // Validar que al menos un libro esté seleccionado antes de enviar el formulario
+  document.getElementById('agregar-a-boleta-form').addEventListener('submit', function(e) {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][name="libros_seleccionados"]');
+    let libroSeleccionado = false;
+    for (let i = 0; i < checkboxes.length; i++) {
+      if (checkboxes[i].checked) {
+        libroSeleccionado = true;
+        break;
+      }
+    }
+    if (!libroSeleccionado) {
+      e.preventDefault();
+      alert('Debes seleccionar al menos un libro.');
+    }
+  });
+</script>
+
+{% endblock %}
